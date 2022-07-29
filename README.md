@@ -43,3 +43,6 @@ Plug 'MeF0504/RegistPaste.vim'
 
 ## Author
 [MeF0504](https://github.com/MeF0504)
+
+## TODO
+- Support visual-block mode paste.
