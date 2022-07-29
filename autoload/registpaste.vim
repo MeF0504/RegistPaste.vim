@@ -48,32 +48,32 @@ function! s:save_reg() abort
     endif
 endfunction
 
-function! s:exec_paste(pP, count, reg) abort
-    execute printf('normal! %d"%s%s', a:count, a:reg, a:pP)
+function! s:exec_paste(pP, cnt, reg) abort
+    execute printf('normal! %d"%s%s', a:cnt, a:reg, a:pP)
 endfunction
 
 function! s:select_paste(pP) abort
-    let count = v:count
+    let cnt = v:count
     if !(a:pP ==# 'p' || a:pP ==# 'P')
         return
     endif
     if !(v:register == '*' || v:register == '"')
-        call s:exec_paste(a:pP, count, v:register)
+        call s:exec_paste(a:pP, cnt, v:register)
         return
     endif
     if empty(s:registers)
-        call s:exec_paste(a:pP, count, v:register)
+        call s:exec_paste(a:pP, cnt, v:register)
         return
     endif
     if len(s:registers) == 1
-        call s:set_str(a:pP, count, 0, 1)
+        call s:set_str(a:pP, cnt, 0, 1)
         return
     endif
 
     let max_width = get(g:, 'registpaste_max_width', &columns*2/3)
     if has('popupwin')
         call popup_menu(s:registers, #{
-                    \ callback: function(expand('<SID>').'set_str', [a:pP, count]),
+                    \ callback: function(expand('<SID>').'set_str', [a:pP, cnt]),
                     \ line: 'cursor+1',
                     \ col: 'cursor',
                     \ pos: 'topleft',
@@ -118,7 +118,7 @@ function! s:select_paste(pP) abort
             elseif key == "k" || key == "\<Up>"
                 call win_execute(wid, 'normal! k')
             elseif key == "\<Enter>" || key == "\<Space>"
-                call s:set_str(a:pP, count, 0, line('.', wid))
+                call s:set_str(a:pP, cnt, 0, line('.', wid))
                 call nvim_win_close(wid, v:false)
                 break
             elseif key == "\<esc>"
@@ -129,11 +129,11 @@ function! s:select_paste(pP) abort
     endif
 endfunction
 
-function! s:set_str(pP, count, id, res) abort
+function! s:set_str(pP, cnt, id, res) abort
     if a:res <= 0
         return
     endif
     let @" = s:registers[a:res-1]
-    call s:exec_paste(a:pP, a:count, '"')
+    call s:exec_paste(a:pP, a:cnt, '"')
 endfunction
 
