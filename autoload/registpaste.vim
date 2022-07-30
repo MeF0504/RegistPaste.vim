@@ -35,14 +35,18 @@ endfunction
 
 function! registpaste#registers() abort
     for i in range(len(s:registers))
-        echo printf('%2d: %s', i, s:registers[i])
+        let reg = s:registers[i]
+        echo printf('%2d: %s%s', i, reg.block?'[b] ':'', substitute(reg.str, '\n', '\\n', 'g'))
     endfor
 endfunction
 
 function! s:save_reg() abort
     let reg_max = get(g:, 'registpaste_max_reg', 10)
-    " call add(s:registers, getreg(''))
-    call extend(s:registers, [getreg('')], 0)
+    let add_item = {
+                \ 'str': getreg(''),
+                \ 'block': getregtype('') =~ "\<c-v>",
+                \ }
+    call extend(s:registers, [add_item], 0)
     if len(s:registers) > reg_max
         call remove(s:registers, reg_max, len(s:registers)-1)
     endif
@@ -76,8 +80,9 @@ function! s:select_paste(pP) abort
     endif
 
     let max_width = get(g:, 'registpaste_max_width', &columns*2/3)
+    let reg_list = map(copy(s:registers), 'v:val.block ? "[b] ".v:val.str : v:val.str')
     if has('popupwin')
-        call popup_menu(s:registers, #{
+        call popup_menu(reg_list, #{
                     \ callback: function(expand('<SID>').'set_str', [a:pP, cnt]),
                     \ line: 'cursor+1',
                     \ col: 'cursor',
@@ -86,7 +91,7 @@ function! s:select_paste(pP) abort
                     \ })
     elseif has('nvim')
         let width = 1
-        for str in s:registers
+        for str in reg_list
             if len(str) > width
                 let width = len(str)
             endif
@@ -101,7 +106,7 @@ function! s:select_paste(pP) abort
                     \ 'row': 1,
                     \ 'col': 0,
                     \ 'width': width,
-                    \ 'height': len(s:registers),
+                    \ 'height': len(reg_list),
                     \ 'style': 'minimal',
                     \ 'anchor': 'NW',
                     \ 'border': 'single',
@@ -109,7 +114,7 @@ function! s:select_paste(pP) abort
         if s:bid < 0
             let s:bid = nvim_create_buf(v:false, v:true)
         endif
-        call nvim_buf_set_lines(s:bid, 0, -1, 0, s:registers)
+        call nvim_buf_set_lines(s:bid, 0, -1, 0, reg_list)
         let wid = nvim_open_win(s:bid, v:false, config)
         call win_execute(wid, 'setlocal cursorline')
         call win_execute(wid, 'setlocal nowrap')
@@ -138,7 +143,13 @@ function! s:set_str(pP, cnt, id, res) abort
     if a:res <= 0
         return
     endif
-    let @" = s:registers[a:res-1]
+    " let @" = s:registers[a:res-1]
+    let reg = s:registers[a:res-1]
+    if reg.block
+        call setreg('"', reg.str, 'b')
+    else
+        call setreg('"', reg.str)
+    endif
     call s:exec_paste(a:pP, a:cnt, '"')
 endfunction
 

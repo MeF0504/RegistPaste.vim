@@ -45,6 +45,5 @@ Plug 'MeF0504/RegistPaste.vim'
 [MeF0504](https://github.com/MeF0504)
 
 ## TODO
-- Support visual-block mode paste.
 - Support `]p`, `[p`, and `zp`.
 - Support '.' repeat.
