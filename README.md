@@ -9,6 +9,10 @@ and overwrites p/P map.
 If you want to disable this plugin please call `registpaste#disable()`.
 This function stops all functions and resets p/P map if `mapset()` callable.
 
+Currently
+- support block-paste (block register shows [b] mark in the list.)
+- support . repeat by using [vim-repeat](https://github.com/tpope/vim-repeat)
+
 ## Requirements
 - popup/floating window  
     `has('popupwin') || exists('*nvim_open_win')`
@@ -46,4 +50,3 @@ Plug 'MeF0504/RegistPaste.vim'
 
 ## TODO
 - Support `]p`, `[p`, and `zp`.
-- Support '.' repeat.

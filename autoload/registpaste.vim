@@ -59,6 +59,9 @@ function! s:exec_paste(pP, cnt, reg) abort
         let cnt = a:cnt
     endif
     execute printf('normal! %d"%s%s', cnt, a:reg, a:pP)
+    if match(split(&runtimepath, ','), 'vim-repeat') != -1
+        call repeat#set(printf("\<Cmd>call %sexec_paste('%s', %d, '%s')\<CR>", expand('<SID>'), a:pP, a:cnt, a:reg), 1)
+    endif
 endfunction
 
 function! s:select_paste(pP) abort
