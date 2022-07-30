@@ -49,7 +49,12 @@ function! s:save_reg() abort
 endfunction
 
 function! s:exec_paste(pP, cnt, reg) abort
-    execute printf('normal! %d"%s%s', a:cnt, a:reg, a:pP)
+    if a:cnt <= 1
+        let cnt = 1
+    else
+        let cnt = a:cnt
+    endif
+    execute printf('normal! %d"%s%s', cnt, a:reg, a:pP)
 endfunction
 
 function! s:select_paste(pP) abort
