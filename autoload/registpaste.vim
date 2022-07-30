@@ -36,15 +36,25 @@ endfunction
 function! registpaste#registers() abort
     for i in range(len(s:registers))
         let reg = s:registers[i]
-        echo printf('%2d: %s%s', i, reg.block?'[b] ':'', substitute(reg.str, '\n', '\\n', 'g'))
+        echo printf('%2d: [%s] %s', i, reg.type, substitute(reg.str, '\n', '\\n', 'g'))
     endfor
 endfunction
 
 function! s:save_reg() abort
     let reg_max = get(g:, 'registpaste_max_reg', 10)
+    let regtype = getregtype('')
+    if regtype =~ "\<c-v>"
+        let t = 'b'
+    elseif regtype ==# 'v'
+        let t = 'c'
+    elseif regtype ==# 'V'
+        let t = 'l'
+    else
+        let t = '?'
+    endif
     let add_item = {
                 \ 'str': getreg(''),
-                \ 'block': getregtype('') =~ "\<c-v>",
+                \ 'type': t,
                 \ }
     call extend(s:registers, [add_item], 0)
     if len(s:registers) > reg_max
@@ -83,7 +93,7 @@ function! s:select_paste(pP) abort
     endif
 
     let max_width = get(g:, 'registpaste_max_width', &columns*2/3)
-    let reg_list = map(copy(s:registers), 'v:val.block ? "[b] ".v:val.str : v:val.str')
+    let reg_list = map(copy(s:registers), 'printf("[%s] %s", v:val.type, v:val.str)')
     if has('popupwin')
         call popup_menu(reg_list, #{
                     \ callback: function(expand('<SID>').'set_str', [a:pP, cnt]),
@@ -146,13 +156,8 @@ function! s:set_str(pP, cnt, id, res) abort
     if a:res <= 0
         return
     endif
-    " let @" = s:registers[a:res-1]
     let reg = s:registers[a:res-1]
-    if reg.block
-        call setreg('"', reg.str, 'b')
-    else
-        call setreg('"', reg.str)
-    endif
+    call setreg('"', reg.str, reg.type)
     call s:exec_paste(a:pP, a:cnt, '"')
 endfunction
 
