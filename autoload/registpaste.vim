@@ -14,6 +14,12 @@ function! registpaste#enable() abort
     let s:Pmap = maparg('P', 'n', 0, 1)
     nnoremap p <Cmd>call <SID>select_paste('p')<CR>
     nnoremap P <Cmd>call <SID>select_paste('P')<CR>
+    nnoremap [p <Cmd>call <SID>select_paste('[p')<CR>
+    nnoremap [P <Cmd>call <SID>select_paste('[P')<CR>
+    nnoremap ]p <Cmd>call <SID>select_paste(']p')<CR>
+    nnoremap ]P <Cmd>call <SID>select_paste(']P')<CR>
+    nnoremap zp <Cmd>call <SID>select_paste('zp')<CR>
+    nnoremap zP <Cmd>call <SID>select_paste('zP')<CR>
 endfunction
 
 function! registpaste#disable() abort
@@ -76,7 +82,7 @@ endfunction
 
 function! s:select_paste(pP) abort
     let cnt = v:count
-    if !(a:pP ==# 'p' || a:pP ==# 'P')
+    if match(split('p P [p [P ]p ]P zp zP', ' '), a:pP) == -1
         return
     endif
     if !(v:register == '*' || v:register == '"')

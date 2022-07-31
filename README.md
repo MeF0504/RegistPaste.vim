@@ -12,6 +12,7 @@ This function stops all functions and resets p/P map if `mapset()` callable.
 Currently
 - support block-paste (block register shows [b] mark in the list.)
 - support . repeat by using [vim-repeat](https://github.com/tpope/vim-repeat)
+- support `]p`, `[p`, and `zp`.
 
 ## Requirements
 - popup/floating window  
@@ -49,4 +50,3 @@ Plug 'MeF0504/RegistPaste.vim'
 [MeF0504](https://github.com/MeF0504)
 
 ## TODO
-- Support `]p`, `[p`, and `zp`.
