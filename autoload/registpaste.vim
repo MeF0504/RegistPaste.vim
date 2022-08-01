@@ -2,41 +2,36 @@ scriptencoding utf-8
 
 let s:registers = []
 let s:bid = -1
-let s:pmap = {}
-let s:Pmap = {}
+let s:pPs = split('p P [p [P ]p ]P zp zP', ' ')
+let s:mapargs = []
 
 function! registpaste#enable() abort
     augroup RegistPaste
         autocmd!
         autocmd TextYankPost * call s:save_reg()
     augroup END
-    let s:pmap = maparg('p', 'n', 0, 1)
-    let s:Pmap = maparg('P', 'n', 0, 1)
-    nnoremap p <Cmd>call <SID>select_paste('p')<CR>
-    nnoremap P <Cmd>call <SID>select_paste('P')<CR>
-    nnoremap [p <Cmd>call <SID>select_paste('[p')<CR>
-    nnoremap [P <Cmd>call <SID>select_paste('[P')<CR>
-    nnoremap ]p <Cmd>call <SID>select_paste(']p')<CR>
-    nnoremap ]P <Cmd>call <SID>select_paste(']P')<CR>
-    nnoremap zp <Cmd>call <SID>select_paste('zp')<CR>
-    nnoremap zP <Cmd>call <SID>select_paste('zP')<CR>
+    for p in s:pPs
+        call add(s:mapargs, maparg(p, 'n', 0, 1))
+        execute printf('nnoremap %s <Cmd>call <SID>select_paste("%s")<CR>', p, p)
+    endfor
 endfunction
 
 function! registpaste#disable() abort
     augroup RegistPaste
         autocmd!
     augroup END
-    nunmap p
-    nunmap P
+    for p in s:pPs
+        execute printf('nunmap %s', p)
+    endfor
     if exists('*mapset')
-        if !empty(s:pmap)
-            call mapset('n', 0, s:pmap)
-        endif
-        if !empty(s:Pmap)
-            call mapset('n', 0, s:Pmap)
-        endif
+        for pmap in s:mapargs
+            if !empty(pmap)
+                call mapset('n', 0, pmap)
+            endif
+        endfor
     endif
     let s:registers = []
+    let s:mapargs = []
 endfunction
 
 function! registpaste#registers() abort
@@ -82,7 +77,7 @@ endfunction
 
 function! s:select_paste(pP) abort
     let cnt = v:count
-    if match(split('p P [p [P ]p ]P zp zP', ' '), a:pP) == -1
+    if match(s:pPs, a:pP) == -1
         return
     endif
     if !(v:register == '*' || v:register == '"')
