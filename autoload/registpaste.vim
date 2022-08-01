@@ -137,6 +137,7 @@ function! s:select_paste(pP) abort
         let wid = nvim_open_win(s:bid, v:false, config)
         call win_execute(wid, 'setlocal cursorline')
         call win_execute(wid, 'setlocal nowrap')
+        call win_execute(wid, 'setlocal nofoldenable')
         call win_execute(wid, 'setlocal winhighlight=CursorLine:PmenuSel')
         call win_execute(wid, 'normal! gg')
         while 1
