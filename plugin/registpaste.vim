@@ -3,11 +3,6 @@
 " Author: MeF
 " License: MIT
 
-if exists('g:loaded_registpaste')
-  finish
-endif
-let g:loaded_registpaste = 1
-
 " popup/floating window
 if !(has('popupwin') || exists('*nvim_open_win'))
     finish
@@ -20,6 +15,11 @@ endif
 if !exists('*win_execute')
     finish
 endif
+
+if exists('g:loaded_registpaste')
+  finish
+endif
+let g:loaded_registpaste = 1
 
 let s:save_cpo = &cpo
 set cpo&vim

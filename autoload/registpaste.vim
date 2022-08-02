@@ -70,9 +70,9 @@ function! s:exec_paste(pP, cnt, reg) abort
         let cnt = a:cnt
     endif
     execute printf('normal! %d"%s%s', cnt, a:reg, a:pP)
-    if match(split(&runtimepath, ','), 'vim-repeat') != -1
+    try
         call repeat#set(printf("\<Cmd>call %sexec_paste('%s', %d, '%s')\<CR>", expand('<SID>'), a:pP, a:cnt, a:reg), 1)
-    endif
+    endtry
 endfunction
 
 function! s:select_paste(pP) abort
@@ -143,8 +143,9 @@ function! s:select_paste(pP) abort
             elseif key == "k" || key == "\<Up>"
                 call win_execute(wid, 'normal! k')
             elseif key == "\<Enter>" || key == "\<Space>"
-                call s:set_str(a:pP, cnt, 0, line('.', wid))
+                let ln = line('.', wid)
                 call nvim_win_close(wid, v:false)
+                call s:set_str(a:pP, cnt, 0, ln)
                 break
             elseif key == "\<esc>"
                 call nvim_win_close(wid, v:false)
