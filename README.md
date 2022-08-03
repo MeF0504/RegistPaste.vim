@@ -50,3 +50,5 @@ Plug 'MeF0504/RegistPaste.vim'
 [MeF0504](https://github.com/MeF0504)
 
 ## TODO
+- Support visual mode.
+- Support clipboard sharing?
