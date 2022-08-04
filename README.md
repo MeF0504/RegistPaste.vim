@@ -52,3 +52,5 @@ Plug 'MeF0504/RegistPaste.vim'
 ## TODO
 - Support visual mode.
 - Support clipboard sharing?
+- Become selectable if overwrite maps or not.
+- Become selectable the pasting text from locally stored list or registers.
