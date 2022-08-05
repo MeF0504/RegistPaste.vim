@@ -40,8 +40,14 @@ Plug 'MeF0504/RegistPaste.vim'
     Set the max holding number of yanked strings.  
     default: 10
 - `g:registpaste_max_width (number)  
-    Set the max width of popup/floating window.
+    Set the max width of popup/floating window.  
     default: &columns*2/3
+- `g:registpaste_maps` (dict)  
+    Control the mapping of this plugin.
+    Keys of this dict are selected from `p, P, zp, zP, [p, [P, ]p, ]P`.
+    Value of this dict is the overwriting mapping of the function of the key;
+    mean `nnoremap {value} {key}`.  
+    default:`{'p':'p', 'P':'P', 'zp':'zp', 'zP':'zP', '[p':'[p', '[P':'[P', ']P':']P', ']p':']p'}`
 
 ## License
 [MIT](https://github.com/MeF0504/RegistPaste.vim/blob/main/LICENSE)
@@ -52,5 +58,4 @@ Plug 'MeF0504/RegistPaste.vim'
 ## TODO
 - Support visual mode.
 - Support clipboard sharing?
-- Become selectable if overwrite maps or not.
 - Become selectable the pasting text from locally stored list or registers.

@@ -3,7 +3,8 @@ scriptencoding utf-8
 let s:registers = []
 let s:bid = -1
 let s:wid = -1
-let s:pPs = split('p P [p [P ]p ]P zp zP', ' ')
+let s:pPs_key = split('p P [p [P ]p ]P zp zP', ' ')
+let s:pPs = {}
 let s:mapargs = []
 
 function! registpaste#enable() abort
@@ -11,9 +12,15 @@ function! registpaste#enable() abort
         autocmd!
         autocmd TextYankPost * call s:save_reg()
     augroup END
-    for p in s:pPs
-        call add(s:mapargs, maparg(p, 'n', 0, 1))
-        execute printf('nnoremap %s <Cmd>call <SID>select_paste("%s")<CR>', p, p)
+    let tmp = {}
+    for p in s:pPs_key | let tmp[p] = p | endfor
+    let s:pPs = get(g:, 'registpaste_maps', tmp)
+    unlet tmp
+    for [p, mapped] in items(s:pPs)
+        if match(s:pPs_key, p) != -1
+            call add(s:mapargs, maparg(mapped, 'n', 0, 1))
+            execute printf('nnoremap %s <Cmd>call <SID>select_paste("%s")<CR>', mapped, p)
+        endif
     endfor
 endfunction
 
@@ -21,9 +28,10 @@ function! registpaste#disable() abort
     augroup RegistPaste
         autocmd!
     augroup END
-    for p in s:pPs
-        execute printf('nunmap %s', p)
+    for mapped in values(s:pPs)
+        execute printf('nunmap %s', mapped)
     endfor
+    let s:pPs = {}
     if s:wid != -1
         call nvim_win_close(s:wid, v:false)
         let s:wid = -1
@@ -70,7 +78,7 @@ endfunction
 
 function! s:select_paste(pP) abort
     let cnt = v:count
-    if match(s:pPs, a:pP) == -1
+    if match(s:pPs_key, a:pP) == -1
         return
     endif
     if !(v:register == '*' || v:register == '"')

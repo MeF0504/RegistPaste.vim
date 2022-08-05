@@ -1,5 +1,5 @@
 " RegistPaste.vim
-" Version: 0.2.1
+" Version: 0.3.1
 " Author: MeF
 " License: MIT
 
