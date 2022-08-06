@@ -20,6 +20,7 @@ function! registpaste#enable() abort
         if match(s:pPs_key, p) != -1
             call add(s:mapargs, maparg(mapped, 'n', 0, 1))
             execute printf('nnoremap %s <Cmd>call <SID>select_paste("%s")<CR>', mapped, p)
+            execute printf('vnoremap %s <Cmd>call <SID>select_paste("%s")<CR>', mapped, p)
         endif
     endfor
 endfunction
