@@ -4,6 +4,7 @@ let s:registers = []
 let s:bid = -1
 let s:wid = -1
 let s:pPs_key = split('p P [p [P ]p ]P zp zP', ' ')
+let s:reg = ''
 let s:pPs = {}
 let s:mapargs = []
 
@@ -12,6 +13,7 @@ function! registpaste#enable() abort
         autocmd!
         autocmd TextYankPost * call s:save_reg()
     augroup END
+    let s:reg = get(g:, 'registpaste_used_register', '"')
     let tmp = {}
     for p in s:pPs_key | let tmp[p] = p | endfor
     let s:pPs = get(g:, 'registpaste_maps', tmp)
@@ -55,6 +57,21 @@ function! registpaste#registers() abort
     endfor
 endfunction
 
+function! s:get_clipboard_info() abort
+    let cbs = split(&clipboard, ',')
+    let res = ['"']
+    for cb in cbs
+        if cb ==# 'unnamed' || cb ==# 'autoselect'
+            call add(res, '*')
+        elseif cb ==# 'unnamedplus' || cb ==# 'autoselectplus'
+            call add(res, '+')
+        elseif cb =~# 'exclude'
+            break
+        endif
+    endfor
+    return res
+endfunction
+
 function! s:save_reg() abort
     let reg_max = get(g:, 'registpaste_max_reg', 10)
     let regtype = getregtype('')
@@ -82,7 +99,7 @@ function! s:select_paste(pP) abort
     if match(s:pPs_key, a:pP) == -1
         return
     endif
-    if !(v:register == '*' || v:register == '"')
+    if match(s:get_clipboard_info(), v:register) == -1
         call s:exec_paste(a:pP, cnt, v:register)
         return
     endif
@@ -169,8 +186,8 @@ function! s:set_str(pP, cnt, id, res) abort
         return
     endif
     let reg = s:registers[a:res-1]
-    call setreg('"', reg.str, reg.type)
-    call s:exec_paste(a:pP, a:cnt, '"')
+    call setreg(s:reg, reg.str, reg.type)
+    call s:exec_paste(a:pP, a:cnt, s:reg)
 endfunction
 
 function! s:exec_paste(pP, cnt, reg) abort

@@ -39,6 +39,9 @@ Plug 'MeF0504/RegistPaste.vim'
 - `g:registpaste_max_reg` (number)  
     Set the max holding number of yanked strings.  
     default: 10
+- `g:registpaste_used_register` (character)  
+    Set the register name used to store the selected string.  
+    default: '"'
 - `g:registpaste_max_width (number)  
     Set the max width of popup/floating window.  
     default: &columns*2/3
