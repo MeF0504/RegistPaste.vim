@@ -59,5 +59,7 @@ Plug 'MeF0504/RegistPaste.vim'
 [MeF0504](https://github.com/MeF0504)
 
 ## TODO
-- Support clipboard sharing?
-- Become selectable the pasting text from locally stored list or registers.
+- Support clipboard sharing?  
+    Specifications are not fixed. This may take time...
+- Become selectable the pasting text from locally stored list or registers.  
+    Currently there is no motivation to do this. Please put an issue if you want.
