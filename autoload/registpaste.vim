@@ -73,6 +73,9 @@ function! s:get_clipboard_info() abort
 endfunction
 
 function! s:save_reg() abort
+    if match(s:get_clipboard_info(), v:register) == -1
+        return
+    endif
     let reg_max = get(g:, 'registpaste_max_reg', 10)
     let regtype = getregtype('')
     if regtype =~ "\<c-v>"
@@ -172,7 +175,7 @@ function! s:select_paste(pP) abort
                 call s:set_str(a:pP, cnt, s:wid, ln)
                 let s:wid = -1
                 break
-            elseif key == "\<esc>"
+            elseif key == "\<esc>" || key == 'x'
                 call nvim_win_close(s:wid, v:false)
                 let s:wid = -1
                 break
