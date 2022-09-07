@@ -39,6 +39,10 @@ Plug 'MeF0504/RegistPaste.vim'
 - `g:registpaste_max_reg` (number)  
     Set the max holding number of yanked strings.  
     default: 10
+- `g:registpaste_is_filter` (number)  
+    If set 1, remove the duplicated item in the registered list.  
+    Note that this only checks the string; regtype is not checked.  
+    default: 1
 - `g:registpaste_used_register` (character)  
     Set the register name used to store the selected string.  
     default: '"'

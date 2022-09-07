@@ -77,6 +77,7 @@ function! s:save_reg() abort
         return
     endif
     let reg_max = get(g:, 'registpaste_max_reg', 10)
+    let is_filter = get(g:, 'registpaste_is_filter', 1)
     let regtype = getregtype('')
     if regtype =~ "\<c-v>"
         let t = 'b'
@@ -91,8 +92,17 @@ function! s:save_reg() abort
                 \ 'str': getreg(''),
                 \ 'type': t,
                 \ }
+    if is_filter
+        let idx = match(
+                    \ map(copy(s:registers), {key, val -> val.str}),
+                    \ printf('^%s$', getreg('')))
+    else
+        let idx = -1
+    endif
     call extend(s:registers, [add_item], 0)
-    if len(s:registers) > reg_max
+    if idx != -1
+        call remove(s:registers, idx+1)
+    elseif len(s:registers) > reg_max
         call remove(s:registers, reg_max, len(s:registers)-1)
     endif
 endfunction
