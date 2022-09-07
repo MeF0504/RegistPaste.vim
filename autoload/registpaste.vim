@@ -85,7 +85,7 @@ function! s:save_reg() abort
     elseif regtype ==# 'V'
         let t = 'l'
     else
-        let t = '?'
+        let t = ''
     endif
     let add_item = {
                 \ 'str': getreg(''),
