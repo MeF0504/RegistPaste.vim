@@ -74,8 +74,17 @@ endfunction
 
 function! s:escape_str(str)
     let str = a:str
-    let str = fnameescape(str)
-    let str = substitute(str, '\~', '\\~', 'g')
+    " let str = fnameescape(str)
+    let pat_dict = {
+                \ '\~': '\\~',
+                \ '\[': '\\[',
+                \ '\.': '\\.',
+                \ '\$': '\\$',
+                \ '\^': '\\^',
+            \ }
+    for [pat, sub] in items(pat_dict)
+        let str = substitute(str, pat, sub, 'g')
+    endfor
     return str
 endfunction
 
