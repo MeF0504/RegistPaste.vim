@@ -72,6 +72,13 @@ function! s:get_clipboard_info() abort
     return res
 endfunction
 
+function! s:escape_str(str)
+    let str = a:str
+    let str = fnameescape(str)
+    let str = substitute(str, '\~', '\\~', 'g')
+    return str
+endfunction
+
 function! s:save_reg() abort
     if match(s:get_clipboard_info(), v:register) == -1
         return
@@ -95,7 +102,7 @@ function! s:save_reg() abort
     if is_filter
         let idx = match(
                     \ map(copy(s:registers), {key, val -> val.str}),
-                    \ printf('^%s$', getreg('')))
+                    \ printf('^%s$', s:escape_str(getreg(''))))
     else
         let idx = -1
     endif
