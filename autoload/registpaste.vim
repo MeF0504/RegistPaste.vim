@@ -216,7 +216,7 @@ function! s:exec_paste(pP, cnt, reg) abort
 endfunction
 
 function! s:close_win(wid) abort
-    if has('popup')
+    if has('popupwin')
         call popup_close(a:wid)
     elseif has('nvim')
         call nvim_win_close(a:wid, v:false)
@@ -225,7 +225,7 @@ endfunction
 
 function! s:update_window(wid, bid, reg_list) abort
     let str_list = map(copy(a:reg_list), 'printf("[%s] %s", v:val.type, v:val.str)')
-    if has('popup')
+    if has('popupwin')
         call popup_settext(a:wid, str_list)
     elseif has('nvim')
         call nvim_buf_set_lines(a:bid, 0, -1, 0, str_list)
@@ -242,12 +242,13 @@ function! registpaste#resort() abort
         echo 'less than 1 registed string'
         return
     endif
-    if has('popup')
+    if has('popupwin')
         let config = #{
                     \ line: line,
                     \ col: col,
                     \ pos: 'botleft',
                     \ maxwidth: max_width,
+                    \ cursorline: v:true,
                     \ }
         let wid = popup_create(reg_list, config)
     elseif has('nvim')
