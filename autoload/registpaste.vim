@@ -215,3 +215,112 @@ function! s:exec_paste(pP, cnt, reg) abort
     endtry
 endfunction
 
+function! s:close_win(wid) abort
+    if has('popup')
+        call popup_close(a:wid)
+    elseif has('nvim')
+        call nvim_win_close(a:wid, v:false)
+    endif
+endfunction
+
+function! s:update_window(wid, bid, reg_list) abort
+    let str_list = map(copy(a:reg_list), 'printf("[%s] %s", v:val.type, v:val.str)')
+    if has('popup')
+        call popup_settext(a:wid, str_list)
+    elseif has('nvim')
+        call nvim_buf_set_lines(a:bid, 0, -1, 0, str_list)
+    endif
+endfunction
+
+function! registpaste#resort() abort
+    let line = &lines-&cmdheight-2
+    let col = 5
+    let max_width = get(g:, 'registpaste_max_width', &columns*2/3)
+    let tmp_list = deepcopy(s:registers)
+    let reg_list = map(copy(s:registers), 'printf("[%s] %s", v:val.type, v:val.str)')
+    if len(reg_list) < 2
+        echo 'less than 1 registed string'
+        return
+    endif
+    if has('popup')
+        let config = #{
+                    \ line: line,
+                    \ col: col,
+                    \ pos: 'botleft',
+                    \ maxwidth: max_width,
+                    \ }
+        let wid = popup_create(reg_list, config)
+    elseif has('nvim')
+        let width = 1
+        for str in reg_list
+            if len(str) > width
+                let width = len(str)
+            endif
+        endfor
+        let width += 1
+        if width > max_width
+            let width = max_width
+        endif
+
+        let config = {
+                    \ 'relative': 'editor',
+                    \ 'row': line,
+                    \ 'col': col,
+                    \ 'anchor': 'SW',
+                    \ 'width': width,
+                    \ 'height': len(reg_list),
+                    \ 'style': 'minimal',
+                    \ 'border': 'single',
+                    \ }
+        if s:bid < 0
+            let s:bid = nvim_create_buf(v:false, v:true)
+        endif
+        call nvim_buf_set_lines(s:bid, 0, -1, 0, reg_list)
+        let wid = nvim_open_win(s:bid, v:false, config)
+        call win_execute(wid, 'setlocal winhighlight=CursorLine:PmenuSel')
+    endif
+    call win_execute(wid, 'setlocal cursorline')
+    call win_execute(wid, 'setlocal nowrap')
+    call win_execute(wid, 'setlocal nofoldenable')
+    call win_execute(wid, 'normal! gg')
+    while 1
+        redraw
+        echo '"j/k":move; "J":go down; "K":go up; "D":delete'
+        let line = line('.')
+        let key = getcharstr()
+        if key ==# "j" || key == "\<Down>"
+            call win_execute(wid, 'normal! j')
+        elseif key ==# "k" || key == "\<Up>"
+            call win_execute(wid, 'normal! k')
+        elseif key ==# 'J'
+            let idx = line('.', wid)-1
+            if idx == len(tmp_list)-1
+                continue
+            endif
+            let tmp = remove(tmp_list, idx)
+            call insert(tmp_list, tmp, idx+1)
+            call s:update_window(wid, s:bid, tmp_list)
+            call win_execute(wid, 'normal! j')
+        elseif key ==# 'K'
+            let idx = line('.', wid)-1
+            if idx == 0
+                continue
+            endif
+            let tmp = remove(tmp_list, idx)
+            call insert(tmp_list, tmp, idx-1)
+            call s:update_window(wid, s:bid, tmp_list)
+            call win_execute(wid, 'normal! k')
+        elseif key ==# 'D'
+            let idx = line('.', wid)-1
+            call remove(tmp_list, idx)
+            call s:update_window(wid, s:bid, tmp_list)
+        elseif key == "\<Enter>" || key == "\<Space>"
+            let s:registers = tmp_list
+            break
+        elseif key == "\<esc>" || key ==# 'x'
+            break
+        endif
+    endwhile
+    call s:close_win(wid)
+endfunction
+

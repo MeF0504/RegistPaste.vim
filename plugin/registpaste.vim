@@ -28,6 +28,8 @@ if get(g:, 'registpaste_auto_enable', 1)
     call registpaste#enable()
 endif
 
+command! RegistPasteResort call registpaste#resort()
+
 let &cpo = s:save_cpo
 unlet s:save_cpo
 
