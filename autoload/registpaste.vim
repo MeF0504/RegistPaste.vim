@@ -126,16 +126,17 @@ function! s:select_paste(pP) abort
     endif
 
     let max_width = get(g:, 'registpaste_max_width', &columns*2/3)
+    let tmp_list = deepcopy(s:registers)
     let reg_list = map(copy(s:registers), 'printf("[%s] %s", v:val.type, v:val.str)')
     if has('popupwin')
-        call popup_menu(reg_list, #{
-                    \ callback: function(expand('<SID>').'set_str', [a:pP, cnt]),
+        let config = #{
                     \ line: 'cursor+1',
                     \ col: 'cursor',
                     \ pos: 'topleft',
                     \ maxwidth: max_width,
-                    \ zindex: 90,
-                    \ })
+                    \ cursorline: v:true,
+                    \ }
+        let s:wid = popup_create(reg_list, config)
     elseif has('nvim')
         let width = 1
         for str in reg_list
@@ -163,35 +164,61 @@ function! s:select_paste(pP) abort
             let s:bid = nvim_create_buf(v:false, v:true)
         endif
         call nvim_buf_set_lines(s:bid, 0, -1, 0, reg_list)
-        if s:wid != -1
-            call nvim_win_close(s:wid, v:false)
-        endif
         let s:wid = nvim_open_win(s:bid, v:false, config)
-        call win_execute(s:wid, 'setlocal cursorline')
-        call win_execute(s:wid, 'setlocal nowrap')
-        call win_execute(s:wid, 'setlocal nofoldenable')
         call win_execute(s:wid, 'setlocal winhighlight=CursorLine:PmenuSel')
-        call win_execute(s:wid, 'normal! gg')
-        while 1
-            redraw
-            let key = getcharstr()
-            if key == "j" || key == "\<Down>"
-                call win_execute(s:wid, 'normal! j')
-            elseif key == "k" || key == "\<Up>"
-                call win_execute(s:wid, 'normal! k')
-            elseif key == "\<Enter>" || key == "\<Space>"
-                let ln = line('.', s:wid)
-                call nvim_win_close(s:wid, v:false)
-                call s:set_str(a:pP, cnt, s:wid, ln)
-                let s:wid = -1
-                break
-            elseif key == "\<esc>" || key == 'x'
-                call nvim_win_close(s:wid, v:false)
-                let s:wid = -1
-                break
-            endif
-        endwhile
     endif
+    call win_execute(s:wid, 'setlocal cursorline')
+    call win_execute(s:wid, 'setlocal nowrap')
+    call win_execute(s:wid, 'setlocal nofoldenable')
+    call win_execute(s:wid, 'normal! gg')
+    echo '"j/k":move; "J":go down; "K":go up; "D":delete; "<Enter>/<Space>":paste; "<esc>/x":cancel'
+    while 1
+        redraw
+        try
+            let key = getcharstr()
+        catch /^Vim:Interrupt$/
+            " ctrl-c (interrupt)
+            call s:close_win()
+            break
+        endtry
+        if key ==# "j" || key ==# "\<Down>"
+            call win_execute(s:wid, 'normal! j')
+        elseif key ==# "k" || key ==# "\<Up>"
+            call win_execute(s:wid, 'normal! k')
+        elseif key ==# "\<Enter>" || key ==# "\<Space>"
+            let s:registers = tmp_list
+            let ln = line('.', s:wid)
+            call s:set_str(a:pP, cnt, s:wid, ln)
+            call s:close_win()
+            break
+        elseif key ==# 'J'
+            let idx = line('.', s:wid)-1
+            if idx == len(tmp_list)-1
+                continue
+            endif
+            let tmp = remove(tmp_list, idx)
+            call insert(tmp_list, tmp, idx+1)
+            call s:update_window(s:wid, s:bid, tmp_list)
+            call win_execute(s:wid, 'normal! j')
+        elseif key ==# 'K'
+            let idx = line('.', s:wid)-1
+            if idx == 0
+                continue
+            endif
+            let tmp = remove(tmp_list, idx)
+            call insert(tmp_list, tmp, idx-1)
+            call s:update_window(s:wid, s:bid, tmp_list)
+            call win_execute(s:wid, 'normal! k')
+        elseif key ==# 'D'
+            let idx = line('.', s:wid)-1
+            call remove(tmp_list, idx)
+            call s:update_window(s:wid, s:bid, tmp_list)
+        elseif key == "\<esc>" || key == 'x'
+            call s:close_win()
+            break
+        endif
+    endwhile
+    normal! :
 endfunction
 
 function! s:set_str(pP, cnt, id, res) abort
@@ -215,12 +242,13 @@ function! s:exec_paste(pP, cnt, reg) abort
     endtry
 endfunction
 
-function! s:close_win(wid) abort
+function! s:close_win() abort
     if has('popupwin')
-        call popup_close(a:wid)
+        call popup_close(s:wid)
     elseif has('nvim')
-        call nvim_win_close(a:wid, v:false)
+        call nvim_win_close(s:wid, v:false)
     endif
+    let s:wid = -1
 endfunction
 
 function! s:update_window(wid, bid, reg_list) abort
@@ -230,98 +258,5 @@ function! s:update_window(wid, bid, reg_list) abort
     elseif has('nvim')
         call nvim_buf_set_lines(a:bid, 0, -1, 0, str_list)
     endif
-endfunction
-
-function! registpaste#resort() abort
-    let line = &lines-&cmdheight-2
-    let col = 5
-    let max_width = get(g:, 'registpaste_max_width', &columns*2/3)
-    let tmp_list = deepcopy(s:registers)
-    let reg_list = map(copy(s:registers), 'printf("[%s] %s", v:val.type, v:val.str)')
-    if len(reg_list) < 2
-        echo 'less than 1 registed string'
-        return
-    endif
-    if has('popupwin')
-        let config = #{
-                    \ line: line,
-                    \ col: col,
-                    \ pos: 'botleft',
-                    \ maxwidth: max_width,
-                    \ cursorline: v:true,
-                    \ }
-        let wid = popup_create(reg_list, config)
-    elseif has('nvim')
-        let width = 1
-        for str in reg_list
-            if len(str) > width
-                let width = len(str)
-            endif
-        endfor
-        let width += 1
-        if width > max_width
-            let width = max_width
-        endif
-
-        let config = {
-                    \ 'relative': 'editor',
-                    \ 'row': line,
-                    \ 'col': col,
-                    \ 'anchor': 'SW',
-                    \ 'width': width,
-                    \ 'height': len(reg_list),
-                    \ 'style': 'minimal',
-                    \ 'border': 'single',
-                    \ }
-        if s:bid < 0
-            let s:bid = nvim_create_buf(v:false, v:true)
-        endif
-        call nvim_buf_set_lines(s:bid, 0, -1, 0, reg_list)
-        let wid = nvim_open_win(s:bid, v:false, config)
-        call win_execute(wid, 'setlocal winhighlight=CursorLine:PmenuSel')
-    endif
-    call win_execute(wid, 'setlocal cursorline')
-    call win_execute(wid, 'setlocal nowrap')
-    call win_execute(wid, 'setlocal nofoldenable')
-    call win_execute(wid, 'normal! gg')
-    while 1
-        redraw
-        echo '"j/k":move; "J":go down; "K":go up; "D":delete'
-        let line = line('.')
-        let key = getcharstr()
-        if key ==# "j" || key == "\<Down>"
-            call win_execute(wid, 'normal! j')
-        elseif key ==# "k" || key == "\<Up>"
-            call win_execute(wid, 'normal! k')
-        elseif key ==# 'J'
-            let idx = line('.', wid)-1
-            if idx == len(tmp_list)-1
-                continue
-            endif
-            let tmp = remove(tmp_list, idx)
-            call insert(tmp_list, tmp, idx+1)
-            call s:update_window(wid, s:bid, tmp_list)
-            call win_execute(wid, 'normal! j')
-        elseif key ==# 'K'
-            let idx = line('.', wid)-1
-            if idx == 0
-                continue
-            endif
-            let tmp = remove(tmp_list, idx)
-            call insert(tmp_list, tmp, idx-1)
-            call s:update_window(wid, s:bid, tmp_list)
-            call win_execute(wid, 'normal! k')
-        elseif key ==# 'D'
-            let idx = line('.', wid)-1
-            call remove(tmp_list, idx)
-            call s:update_window(wid, s:bid, tmp_list)
-        elseif key == "\<Enter>" || key == "\<Space>"
-            let s:registers = tmp_list
-            break
-        elseif key == "\<esc>" || key ==# 'x'
-            break
-        endif
-    endwhile
-    call s:close_win(wid)
 endfunction
 
