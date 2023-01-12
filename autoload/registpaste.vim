@@ -124,6 +124,12 @@ function! s:select_paste(pP) abort
         call s:set_str(a:pP, cnt, 0, 1)
         return
     endif
+    if !&modifiable
+        echohl ErrorMsg
+        echomsg "Cannot make changes, 'modifiable' is off."
+        echohl None
+        return
+    endif
 
     let max_width = get(g:, 'registpaste_max_width', &columns*2/3)
     let tmp_list = deepcopy(s:registers)
@@ -188,8 +194,11 @@ function! s:select_paste(pP) abort
         elseif key ==# "\<Enter>" || key ==# "\<Space>"
             let s:registers = tmp_list
             let ln = line('.', s:wid)
-            call s:set_str(a:pP, cnt, s:wid, ln)
+            " popup_select に従えばset_str (cb) -> closeだが，
+            " pasteでコケるとwindowが残ってしまうのでこうする
+            let wid = s:wid
             call s:close_win()
+            call s:set_str(a:pP, cnt, wid, ln)
             break
         elseif key ==# 'J'
             let idx = line('.', s:wid)-1
