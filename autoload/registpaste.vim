@@ -8,16 +8,24 @@ let s:reg = ''
 let s:pPs = {}
 let s:mapargs = []
 
-function! registpaste#enable() abort
-    augroup RegistPaste
-        autocmd!
-        autocmd TextYankPost * call s:save_reg()
-    augroup END
+function! s:set_config() abort
     let s:reg = get(g:, 'registpaste_used_register', '"')
     let tmp = {}
     for p in s:pPs_key | let tmp[p] = p | endfor
     let s:pPs = get(g:, 'registpaste_maps', tmp)
     unlet tmp
+    let s:reg_max = get(g:, 'registpaste_max_reg', 10)
+    let s:is_filter = get(g:, 'registpaste_is_filter', 1)
+    let s:max_width = get(g:, 'registpaste_max_width', &columns*2/3)
+    let s:use_clipboard = get(g:, 'registpaste_use_clipboard', 1)
+endfunction
+
+function! registpaste#enable() abort
+    augroup RegistPaste
+        autocmd!
+        autocmd TextYankPost * call s:save_reg('')
+    augroup END
+    call s:set_config()
     for [p, mapped] in items(s:pPs)
         if match(s:pPs_key, p) != -1
             call add(s:mapargs, maparg(mapped, 'n', 0, 1))
@@ -72,13 +80,12 @@ function! s:get_clipboard_info() abort
     return res
 endfunction
 
-function! s:save_reg() abort
+function! s:save_reg(reg) abort
     if match(s:get_clipboard_info(), v:register) == -1
+        " register specified
         return
     endif
-    let reg_max = get(g:, 'registpaste_max_reg', 10)
-    let is_filter = get(g:, 'registpaste_is_filter', 1)
-    let regtype = getregtype('')
+    let regtype = getregtype(a:reg)
     if regtype =~ "\<c-v>"
         let t = 'b'
     elseif regtype ==# 'v'
@@ -89,12 +96,12 @@ function! s:save_reg() abort
         let t = ''
     endif
     let add_item = {
-                \ 'str': getreg(''),
+                \ 'str': getreg(a:reg),
                 \ 'type': t,
                 \ }
-    if is_filter
+    if s:is_filter
         let idx = match(
-                    \ map(copy(s:registers), {key, val -> val.str ==# getreg('')}),
+                    \ map(copy(s:registers), {key, val -> val.str ==# add_item.str}),
                     \ 1)
     else
         let idx = -1
@@ -102,21 +109,29 @@ function! s:save_reg() abort
     call extend(s:registers, [add_item], 0)
     if idx != -1
         call remove(s:registers, idx+1)
-    elseif len(s:registers) > reg_max
-        call remove(s:registers, reg_max, len(s:registers)-1)
+    elseif len(s:registers) > s:reg_max
+        call remove(s:registers, s:reg_max, len(s:registers)-1)
     endif
 endfunction
 
 function! s:select_paste(pP) abort
     let cnt = v:count
     if match(s:pPs_key, a:pP) == -1
+        " incorrect input
         return
     endif
-    if match(s:get_clipboard_info(), v:register) == -1
+    call s:set_config()
+    let cb = s:get_clipboard_info()
+    if match(cb, v:register) == -1
+        " register specified
         call s:exec_paste(a:pP, cnt, v:register)
         return
     endif
+    if s:use_clipboard && len(cb) > 1
+        call s:save_reg(cb[-1])
+    endif
     if empty(s:registers)
+        " not registed
         call s:exec_paste(a:pP, cnt, v:register)
         return
     endif
@@ -131,7 +146,6 @@ function! s:select_paste(pP) abort
         return
     endif
 
-    let max_width = get(g:, 'registpaste_max_width', &columns*2/3)
     let tmp_list = deepcopy(s:registers)
     let reg_list = map(copy(s:registers), 'printf("[%s] %s", v:val.type, v:val.str)')
     if has('popupwin')
@@ -139,7 +153,7 @@ function! s:select_paste(pP) abort
                     \ line: 'cursor+1',
                     \ col: 'cursor',
                     \ pos: 'topleft',
-                    \ maxwidth: max_width,
+                    \ maxwidth: s:max_width,
                     \ cursorline: v:true,
                     \ }
         let s:wid = popup_create(reg_list, config)
@@ -151,8 +165,8 @@ function! s:select_paste(pP) abort
             endif
         endfor
         let width += 1
-        if width > max_width
-            let width = max_width
+        if width > s:max_width
+            let width = s:max_width
         endif
 
         let config = {

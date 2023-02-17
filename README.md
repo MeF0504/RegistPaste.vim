@@ -46,6 +46,9 @@ Plug 'MeF0504/RegistPaste.vim'
 - `g:registpaste_used_register` (character)  
     Set the register name used to store the selected string.  
     default: '"'
+- `g:registpaste_use_clipboard` (number)
+    If set 1, this plugin also refers to the "*" or "+" register when pasting.  
+    default: 1
 - `g:registpaste_max_width (number)  
     Set the max width of popup/floating window.  
     default: &columns*2/3
