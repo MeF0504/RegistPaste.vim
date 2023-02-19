@@ -17,7 +17,10 @@ function! s:set_config() abort
     let s:reg_max = get(g:, 'registpaste_max_reg', 10)
     let s:is_filter = get(g:, 'registpaste_is_filter', 1)
     let s:max_width = get(g:, 'registpaste_max_width', &columns*2/3)
-    let s:use_clipboard = get(g:, 'registpaste_use_clipboard', 1)
+    if is_filter
+        let s:use_clipboard = get(g:, 'registpaste_use_clipboard', 1)
+    else
+        let s:use_clipboard = 0
 endfunction
 
 function! registpaste#enable() abort
